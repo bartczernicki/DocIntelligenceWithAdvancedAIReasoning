@@ -1,0 +1,15 @@
+{
+  //Workflow ProcessSettings
+  //Use these to skip parts of the workflow
+  // Works like a checkpoint system,where once a step finishes...
+  // It can be re-used by setting it to True
+  "skipDocumentIntelligence": "False",
+  "skipDynamicDocumentGroupings": "False",
+  "skipMarkdownToJsonConversion": "False",
+  "skipIntermediateRiskFactors": "False",
+  "skipConsolidatedRiskAnalysis": "False",
+
+  // Document Locations
+  "document1": "C:\\temp\\RMF1.pdf",
+  "document2": "C:\\temp\\RMF2.pdf"
+}

@@ -1,0 +1,39 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net9.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <NoWarn>$(NoWarn);SKEXP0001,SKEXP0010,SKEXP0050</NoWarn>
+    <UserSecretsId>4a3d0600-ea78-4a9c-9d64-96ae3968ea5f</UserSecretsId>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Azure.AI.DocumentIntelligence" Version="1.0.0-beta.3" />
+    <PackageReference Include="Azure.AI.OpenAI" Version="2.1.0" />
+    <PackageReference Include="Markdig" Version="0.38.0" />
+    <PackageReference Include="Microsoft.Extensions.Configuration" Version="9.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="9.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.UserSecrets" Version="9.0.0" />
+    <PackageReference Include="Microsoft.ML.Tokenizers" Version="1.0.0" />
+    <PackageReference Include="Microsoft.ML.Tokenizers.Data.O200kBase" Version="1.0.0" />
+    <PackageReference Include="Microsoft.SemanticKernel" Version="1.32.0" />
+    <PackageReference Include="Microsoft.SemanticKernel.Abstractions" Version="1.32.0" />
+    <PackageReference Include="Microsoft.SemanticKernel.Plugins.Memory" Version="1.32.0-alpha" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="local.configuration.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="ParsedFileArg.md">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Output\" />
+  </ItemGroup>
+
+</Project>
