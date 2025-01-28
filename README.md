@@ -7,4 +7,4 @@ The o1 model series achieves this by optimizing the reasoning approach. Similarl
 
 This repository includes a C# Console application that will orchestrate the following Risk Analysis Pipeline below:  
 
-![Risk Analysis Pipeline](https://raw.githubusercontent.com/bartczernicki/RiskAnalysisWithOpenAIReasoning/refs/heads/master/RiskAnalysisWithOpenAIReasoning/Images/RiskAnalysisWithOpenAIReasoning-Pipeline.png) 
+![Risk Analysis Pipeline](https://raw.githubusercontent.com/bartczernicki/DocIntelligenceWithAdvancedAIReasoning/refs/heads/master/RiskAnalysisPipeline.png) 
