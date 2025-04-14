@@ -10,17 +10,14 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Azure.AI.DocumentIntelligence" Version="1.0.0-beta.3" />
-    <PackageReference Include="Azure.AI.OpenAI" Version="2.1.0" />
-    <PackageReference Include="Markdig" Version="0.38.0" />
-    <PackageReference Include="Microsoft.Extensions.Configuration" Version="9.0.0" />
-    <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="9.0.0" />
-    <PackageReference Include="Microsoft.Extensions.Configuration.UserSecrets" Version="9.0.0" />
-    <PackageReference Include="Microsoft.ML.Tokenizers" Version="1.0.0" />
-    <PackageReference Include="Microsoft.ML.Tokenizers.Data.O200kBase" Version="1.0.0" />
-    <PackageReference Include="Microsoft.SemanticKernel" Version="1.32.0" />
-    <PackageReference Include="Microsoft.SemanticKernel.Abstractions" Version="1.32.0" />
-    <PackageReference Include="Microsoft.SemanticKernel.Plugins.Memory" Version="1.32.0-alpha" />
+    <PackageReference Include="Azure.AI.DocumentIntelligence" Version="1.0.0" />
+    <PackageReference Include="Azure.AI.OpenAI" Version="2.2.0-beta.4" />
+    <PackageReference Include="Markdig" Version="0.40.0" />
+    <PackageReference Include="Microsoft.Extensions.Configuration" Version="9.0.4" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="9.0.4" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.UserSecrets" Version="9.0.4" />
+    <PackageReference Include="Microsoft.ML.Tokenizers" Version="1.0.2" />
+    <PackageReference Include="Microsoft.ML.Tokenizers.Data.O200kBase" Version="1.0.2" />
   </ItemGroup>
 
   <ItemGroup>

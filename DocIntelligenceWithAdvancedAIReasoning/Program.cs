@@ -5,11 +5,11 @@ using DocIntelligenceSemanticChunking.Objects;
 using Markdig;
 using Markdig.Syntax;
 using Microsoft.Extensions.Configuration;
+using Microsoft.ML.Tokenizers;
 using OpenAI.Chat;
 using System.ClientModel.Primitives;
 using System.Text.Json;
 using System.Xml.Linq;
-using Microsoft.ML.Tokenizers;
 
 namespace DocIntelligenceSemanticChunking
 {
@@ -52,9 +52,9 @@ namespace DocIntelligenceSemanticChunking
 
             // Retrieve the Azure OpenAI Configuration Section (secrets.json)
             var azureOpenAISection = configuration.GetSection("AzureOpenAI");
-            var o1AzureOpenAIEndpoint = configuration.GetSection("AzureOpenAI")["o1Endpoint"];
-            var o1AzureModelDeploymentName = configuration.GetSection("AzureOpenAI")["o1ModelDeploymentName"];
-            var o1AzureOpenAIAPIKey = configuration.GetSection("AzureOpenAI")["o1APIKey"];
+            var reasoningAzureOpenAIEndpoint = configuration.GetSection("AzureOpenAI")["reasoningEndpoint"];
+            var reasoningAzureModelDeploymentName = configuration.GetSection("AzureOpenAI")["reasoningModelDeploymentName"];
+            var reasoningAzureOpenAIAPIKey = configuration.GetSection("AzureOpenAI")["reasoningAPIKey"];
             var gpt4oAzureOpenAIEndpoint = configuration.GetSection("AzureOpenAI")["gpt4oEndpoint"];
             var gpt4oAzureModelDeploymentName = configuration.GetSection("AzureOpenAI")["gpt4oModelDeploymentName"];
             var gpt4oAzureOpenAIAPIKey = configuration.GetSection("AzureOpenAI")["gpt4oAPIKey"];
@@ -63,22 +63,21 @@ namespace DocIntelligenceSemanticChunking
             var o1OutputDirectory = Path.Combine(Directory.GetCurrentDirectory(), "Output");
 
             var retryPolicy = new ClientRetryPolicy(maxRetries: 3);
-            AzureOpenAIClientOptions azureOpenAIClientOptions = new AzureOpenAIClientOptions(AzureOpenAIClientOptions.ServiceVersion.V2024_10_21);
+            AzureOpenAIClientOptions azureOpenAIClientOptions = new AzureOpenAIClientOptions(AzureOpenAIClientOptions.ServiceVersion.V2025_03_01_Preview);
             azureOpenAIClientOptions.RetryPolicy = retryPolicy;
             azureOpenAIClientOptions.NetworkTimeout = TimeSpan.FromMinutes(10); // Large Timeout
 
-            Uri azureOpenAIResourceUri = new(o1AzureOpenAIEndpoint!);
-            var azureApiCredential = new System.ClientModel.ApiKeyCredential(o1AzureOpenAIAPIKey!);
+            Uri azureOpenAIResourceUri = new(reasoningAzureOpenAIEndpoint!);
+            var azureApiCredential = new System.ClientModel.ApiKeyCredential(reasoningAzureOpenAIAPIKey!);
 
-            var o1Client = new AzureOpenAIClient(azureOpenAIResourceUri, azureApiCredential, azureOpenAIClientOptions);
+            var reasoningClient = new AzureOpenAIClient(azureOpenAIResourceUri, azureApiCredential, azureOpenAIClientOptions);
             var gpt4oClient = new AzureOpenAIClient(new Uri(gpt4oAzureOpenAIEndpoint!), new System.ClientModel.ApiKeyCredential(gpt4oAzureOpenAIAPIKey!), azureOpenAIClientOptions);
 
-            var completionOptions = new ChatCompletionOptions()
+            var reasoningCompletionOptions = new ChatCompletionOptions()
             {
-                // Temperature = 1f,
-                EndUserId = "o1Analysis",
-                //MaxOutputTokenCount = 10000
-                // TopLogProbabilityCount = true ? 5 : 1 // Azure OpenAI maximum is 5               
+                EndUserId = "reasoningAnalysis",
+                ReasoningEffortLevel = ChatReasoningEffortLevel.High,
+                // MaxOutputTokenCount = 50000              
             };
 
             var gpt4oCompletionOptions = new ChatCompletionOptions()
@@ -93,7 +92,8 @@ namespace DocIntelligenceSemanticChunking
             var endpoint = configuration.GetSection("DocumentIntelligence")["Endpoint"];
             var key = configuration.GetSection("DocumentIntelligence")["APIKey"];
             AzureKeyCredential credential = new AzureKeyCredential(key!);
-            DocumentIntelligenceClient client = new DocumentIntelligenceClient(new Uri(endpoint!), credential);
+            var documentIntelligenceClientOptions = new DocumentIntelligenceClientOptions(DocumentIntelligenceClientOptions.ServiceVersion.V2024_11_30);
+            DocumentIntelligenceClient client = new DocumentIntelligenceClient(new Uri(endpoint!), credential, documentIntelligenceClientOptions);
 
             // Get the file name without extension
             var document1Name = Path.GetFileName(document1);
@@ -116,17 +116,25 @@ namespace DocIntelligenceSemanticChunking
                 await Parallel.ForEachAsync(documents, parallelOptions, async (document, cancellationToken) =>
                 {
                     Console.WriteLine($"Converting Document to Binary...{document}");
-                    AnalyzeDocumentContent content = new AnalyzeDocumentContent()
-                    {
-                        Base64Source = BinaryData.FromBytes(File.ReadAllBytes(document))
-                    };
+
+                    var fileBytes = BinaryData.FromBytes(File.ReadAllBytes(document));
+
+                    var analyzeDocumentOptions = new AnalyzeDocumentOptions("prebuilt-layout", fileBytes);
+                    analyzeDocumentOptions.OutputContentFormat = DocumentContentFormat.Markdown;
+
+                    // From previous SDK 
+                    //AnalyzeDocumentContent content = new AnalyzeDocumentContent()
+                    //{
+                    //    Base64Source = BinaryData.FromBytes(File.ReadAllBytes(document))
+                    //};
 
                     Console.WriteLine($"Cracking Document...{document}");
 
                     //var analysisFeatures = new List<DocumentAnalysisFeature>();
                     //analysisFeatures.Add(DocumentAnalysisFeature.StyleFont);
 
-                    Operation<AnalyzeResult> operation = await client.AnalyzeDocumentAsync(WaitUntil.Completed, "prebuilt-layout", content, outputContentFormat: "markdown");
+                    var operation = await client.AnalyzeDocumentAsync(WaitUntil.Completed, analyzeDocumentOptions);
+                    //<AnalyzeResult> operation = await client.AnalyzeDocumentAsync(WaitUntil.Completed, "prebuilt-layout", analyzeDocumentOptions, outputContentFormat: "markdown");
 
                     Console.WriteLine($"Parsing Markdown...{document}");
                     AnalyzeResult result = operation.Value;
@@ -255,9 +263,9 @@ namespace DocIntelligenceSemanticChunking
                 var chatMessagesTableOfContents = new List<ChatMessage>();
                 chatMessagesTableOfContents.Add(tableOfContentsPrompt);
 
-                var chatClient = o1Client.GetChatClient(o1AzureModelDeploymentName);
+                var chatClient = reasoningClient.GetChatClient(reasoningAzureModelDeploymentName);
 
-                var tableOfContentsPromptResponse = await chatClient.CompleteChatAsync(chatMessagesTableOfContents, completionOptions);
+                var tableOfContentsPromptResponse = await chatClient.CompleteChatAsync(chatMessagesTableOfContents, reasoningCompletionOptions);
                 var tableOfContentsPromptResponseOutputDetails = tableOfContentsPromptResponse.Value.Usage.OutputTokenDetails;
                 var tableOfContentsPromptResponseTotalTokenCount = tableOfContentsPromptResponse.Value.Usage.TotalTokenCount;
 
@@ -274,9 +282,9 @@ namespace DocIntelligenceSemanticChunking
                 var chatMessagesTableOfContentsSecond = new List<ChatMessage>();
                 chatMessagesTableOfContentsSecond.Add(tableOfContentsPromptSecond);
 
-                var chatClientSecond = o1Client.GetChatClient(o1AzureModelDeploymentName);
+                var chatClientSecond = reasoningClient.GetChatClient(reasoningAzureModelDeploymentName);
 
-                var tableOfContentsPromptResponseSecond = await chatClientSecond.CompleteChatAsync(chatMessagesTableOfContentsSecond, completionOptions);
+                var tableOfContentsPromptResponseSecond = await chatClientSecond.CompleteChatAsync(chatMessagesTableOfContentsSecond, reasoningCompletionOptions);
 
                 var tableOfContentsPathFinal = Path.Combine(o1OutputDirectory, $"TABLEOFCONTENTSGROUPINGFINAL.MD");
                 var tableOfContentsPromptResponseSecondText = tableOfContentsPromptResponseSecond.Value.Content.FirstOrDefault()!.Text;
@@ -346,8 +354,8 @@ namespace DocIntelligenceSemanticChunking
                     var chatMessagesRiskGroupingAnalysis = new List<ChatMessage>();
                     chatMessagesRiskGroupingAnalysis.Add(riskGroupingAnalysisPrompt);
 
-                    var chatClientSecond = o1Client.GetChatClient(o1AzureModelDeploymentName);
-                    var riskGroupingAnalysisPromptResponse = await chatClientSecond.CompleteChatAsync(chatMessagesRiskGroupingAnalysis, completionOptions);
+                    var chatClientSecond = reasoningClient.GetChatClient(reasoningAzureModelDeploymentName);
+                    var riskGroupingAnalysisPromptResponse = await chatClientSecond.CompleteChatAsync(chatMessagesRiskGroupingAnalysis, reasoningCompletionOptions);
 
                     var groupNameFixed = sectionGrouping.GroupName.Replace("/", string.Empty);
                     var riskGroupingAnalysisTable = Path.Combine(riskAnalysisIntermediate, $"{groupNameFixed.ToUpper()}.MD");
@@ -391,8 +399,8 @@ namespace DocIntelligenceSemanticChunking
                 var tokenCount = tokenizer.CountTokens(riskConsolidationPrompt);
                 Console.WriteLine($"Risk Consolidation Prompt Token Count: {tokenCount}");
 
-                var chatCliento1 = o1Client.GetChatClient(o1AzureModelDeploymentName);
-                var riskConsolidationPromptResponse = await chatCliento1.CompleteChatAsync(riskConsolidationPromptChatMessages, completionOptions);
+                var chatCliento1 = reasoningClient.GetChatClient(reasoningAzureModelDeploymentName);
+                var riskConsolidationPromptResponse = await chatCliento1.CompleteChatAsync(riskConsolidationPromptChatMessages, reasoningCompletionOptions);
 
                 var riskConsolidationTable = Path.Combine(outputDirectory, $"CONSOLIDATEDRISKANALYSIS.MD");
                 var riskConsolidationPromptResponseText = riskConsolidationPromptResponse.Value.Content.FirstOrDefault()!.Text;
