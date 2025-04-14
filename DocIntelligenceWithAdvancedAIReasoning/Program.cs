@@ -46,10 +46,6 @@ namespace DocIntelligenceSemanticChunking
             Console.WriteLine($"STEP 0 - CONFIGURATION...");
             Console.ResetColor();
 
-            // Azure OpenAI Configuration from user secrets
-            //ConfigurationBuilder configurationBuilder = new ConfigurationBuilder();
-            // IConfiguration configuration = configurationBuilder.AddUserSecrets<Program>().Build();
-
             // Retrieve the Azure OpenAI Configuration Section (secrets.json)
             var azureOpenAISection = configuration.GetSection("AzureOpenAI");
             var reasoningAzureOpenAIEndpoint = configuration.GetSection("AzureOpenAI")["reasoningEndpoint"];
