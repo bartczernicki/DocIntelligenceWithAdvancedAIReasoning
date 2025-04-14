@@ -10,6 +10,6 @@
   "skipConsolidatedRiskAnalysis": "False",
 
   // Document Locations
-  "document1": "C:\\temp\\RMF1.pdf",
-  "document2": "C:\\temp\\RMF2.pdf"
+  "document1": "C:\\Users\\Bart\\Downloads\\Microsoft-10-K-2023.pdf",
+  "document2": "C:\\Users\\Bart\\Downloads\\Microsoft-10-K-2024.pdf"
 }
